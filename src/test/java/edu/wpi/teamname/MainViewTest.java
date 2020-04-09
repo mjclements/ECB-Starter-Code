@@ -1,8 +1,10 @@
 package edu.wpi.teamname;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.testfx.api.FxAssert.verifyThat;
 
+import edu.wpi.teamname.entity.Mortgage;
+import edu.wpi.teamname.views.LabelController;
+import edu.wpi.teamname.views.MainController;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -16,7 +18,17 @@ public class MainViewTest extends ApplicationTest {
 
   @Override
   public void start(Stage stage) throws Exception {
-    Parent root = FXMLLoader.load(getClass().getResource("views/MainView.fxml"));
+    Mortgage sharedMortgage = new Mortgage();
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("views/MainView.fxml"));
+    loader.setControllerFactory(
+        controllerClass -> {
+          if (controllerClass.equals(LabelController.class)) {
+            return new LabelController(sharedMortgage);
+          } else {
+            return new MainController(sharedMortgage);
+          }
+        });
+    Parent root = loader.load();
     Scene scene = new Scene(root);
     stage.setScene(scene);
     stage.setAlwaysOnTop(true);
@@ -46,10 +58,12 @@ public class MainViewTest extends ApplicationTest {
 
     double monthlyRate = .03 / 12;
     int n = 30 * 12;
-    double compound = Math.pow(1 + monthlyRate, n);
 
-    assertEquals(
-        String.format("$%.2f", 2000 * (monthlyRate * compound) / (compound - 1)),
-        ((Label) lookup("#totalLabel")).getText());
+    verifyThat(
+        "#totalLabel",
+        l ->
+            ((Label) l)
+                .getText()
+                .equals(String.format("$%.2f", 2000 * Math.pow(1 + monthlyRate, n) / 12)));
   }
 }
